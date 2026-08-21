@@ -1,0 +1,50 @@
+# .github/workflows/update-prices.yml
+#
+# 매주 자동으로 실행되어 중고 컴퓨터 부품 시세를 최신화하는 워크플로입니다.
+# 이 파일을 GitHub 저장소의 .github/workflows/ 폴더에 넣으면 자동으로 작동합니다.
+#
+# 동작 방식:
+#   1) 매주 월요일 오전 3시(KST)에 자동 실행 (cron)
+#   2) scripts/update-prices.js 스크립트가 Claude API(웹서치 도구 포함)를 호출해
+#      CPU/GPU/RAM/SSD 등 주요 부품의 최신 중고 시세를 조사
+#   3) 결과를 src/data/prices.json 파일로 저장
+#   4) 변경 사항이 있으면 자동으로 커밋 & 푸시 → Vercel/Netlify가 이를 감지해 자동 재배포
+#
+# 필요한 사전 준비:
+#   - GitHub 저장소 Settings > Secrets 에 ANTHROPIC_API_KEY 등록
+#   - scripts/update-prices.js 파일 작성 (Claude API + 웹서치 도구로 시세 조사 후 JSON 저장하는 로직)
+
+name: Weekly Price Update
+
+on:
+  schedule:
+    - cron: "0 18 * * 0" # UTC 기준 매주 일요일 18:00 = KST 매주 월요일 03:00
+  workflow_dispatch: {} # 수동 실행 버튼도 함께 제공 (필요할 때 즉시 갱신 가능)
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 의존성 설치
+        run: npm install
+
+      - name: 최신 시세 조사 및 JSON 갱신
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/update-prices.js
+
+      - name: 변경 사항 커밋 및 푸시
+        run: |
+          git config user.name "price-bot"
+          git config user.email "price-bot@users.noreply.github.com"
+          git add src/data/prices.json
+          git diff --cached --quiet || git commit -m "chore: 주간 시세 자동 업데이트 ($(date +'%Y-%m-%d'))"
+          git push
