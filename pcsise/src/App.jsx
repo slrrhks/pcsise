@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 
 // 출처: 본치마크(computer.downingmoon.dev) — 당근/번개장터/중고나라 등 공개 매물의 최근 90일 표본.
-// GPU 일부는 2026-08-18 갱신값으로 실측 확인. 판매완료가(soldPrice/soldN)는 확인된 제품에만 존재.
+// GPU 일부는 2026-08-18 갱신값으로 실측 확인. 그 외는 중고나라 판매중 매물 조사값.
 // 그 외 부품의 표본 수(n)는 미검증 추정치이므로 실서비스 전 재조사 필요.
-const DATA_UPDATED_AT = "2026-08-22";
+const DATA_UPDATED_AT = "2026-08-18";
 
 // ── 기능 스위치 ───────────────────────────────────────────────
 // AI 호출 비용이 붙는 기능들. 배포 초기에는 꺼두고 트래픽을 본 뒤 켠다.
@@ -21,11 +21,7 @@ const DATA_SOURCE_NOTE = "본치마크 P2P 매물 중간값 (최근 90일 표본
 
 const CPUS = [
   // 인텔 (표본 3~16건 기준)
-  { id: "i5-12400f", label: "인텔 i5-12400F", base: 16.25, newPrice: 22, n: 8 },
-  // ── 인텔 코어 Ultra 200S 플러스 (2026-03-26 출시, 아직 중고매물 없음·추정치) ──
-  { id: "ultra7-270k-plus", label: "인텔 코어 Ultra 7 270K 플러스", base: 35, newPrice: 44 },
-  { id: "ultra5-250k-plus", label: "인텔 코어 Ultra 5 250K 플러스", base: 27, newPrice: 35 },
-  { id: "ultra5-250kf-plus", label: "인텔 코어 Ultra 5 250KF 플러스", base: 25, newPrice: 32 },
+  { id: "i5-12400f", label: "인텔 i5-12400F", base: 17.5, newPrice: 22, n: 14 },
   // ── 인텔 14세대 ──
   { id: "i9-14900kf", label: "인텔 i9-14900KF", base: 55, newPrice: 72 },
   { id: "i7-14700k", label: "인텔 i7-14700K", base: 40, newPrice: 52 },
@@ -117,15 +113,14 @@ const CPUS = [
   { id: "i3-9100f", label: "인텔 i3-9100F", base: 3.1, newPrice: 0, n: 8 },
   // AMD (표본 3~16건 기준)
   { id: "r5-5600", label: "라이젠 5 5600", base: 15.5, newPrice: 19, n: 15 },
-  { id: "r5-5600x", label: "라이젠 5 5600X", base: 15.5, newPrice: 20, n: 4 },
-  { id: "r5-7500f", label: "라이젠 5 7500F", base: 13, newPrice: 17, n: 6 },
-  { id: "r5-7600", label: "라이젠 5 7600", base: 13, newPrice: 23, n: 11 },
+  { id: "r5-5600x", label: "라이젠 5 5600X", base: 16, newPrice: 20, n: 12 },
+  { id: "r5-7500f", label: "라이젠 5 7500F", base: 13, newPrice: 17, n: 9 },
+  { id: "r5-7600", label: "라이젠 5 7600", base: 18, newPrice: 23, n: 7 },
   { id: "r5-9600x", label: "라이젠 5 9600X", base: 22.8, newPrice: 28, n: 5 },
   { id: "r7-5700x", label: "라이젠 7 5700X", base: 27, newPrice: 32, n: 11 },
   { id: "r7-5700x3d", label: "라이젠 7 5700X3D", base: 36, newPrice: 42, n: 8 },
   { id: "r7-5800x3d", label: "라이젠 7 5800X3D", base: 42.5, newPrice: 0, n: 13 },
   { id: "r7-7700x", label: "라이젠 7 7700X", base: 20, newPrice: 26, n: 6 },
-  { id: "r7-7700x3d", label: "라이젠 7 7700X3D", base: 38, newPrice: 44 },
   { id: "r7-7800x3d", label: "라이젠 7 7800X3D", base: 39.5, newPrice: 48, n: 16 },
   { id: "r7-9800x3d", label: "라이젠 7 9800X3D", base: 57.5, newPrice: 68, n: 9 },
   { id: "r9-7900x", label: "라이젠 9 7900X", base: 28, newPrice: 35, n: 5 },
@@ -137,142 +132,142 @@ const CPUS = [
 const GPUS = [
   { id: "none", label: "없음 (내장그래픽)", base: 0, newPrice: 0 },
   // NVIDIA RTX 50 시리즈
-  { id: "rtx5090", label: "RTX 5090", base: 659, newPrice: 500, n: 7 },
+  { id: "rtx5090", label: "RTX 5090", base: 628, newPrice: 500, n: 7 },
   // ── 엔비디아 40 시리즈 추가 ──
-  { id: "rtx4090d", label: "RTX 4090 D", base: 231, newPrice: 0 },
-  { id: "rtx4050", label: "RTX 4050 6GB", base: 29, newPrice: 0 },
+  { id: "rtx4090d", label: "RTX 4090 D", base: 220, newPrice: 0 },
+  { id: "rtx4050", label: "RTX 4050 6GB", base: 28, newPrice: 0 },
   // ── 엔비디아 30 시리즈 추가 ──
-  { id: "rtx3080ti-12", label: "RTX 3080 Ti 12GB", base: 58, newPrice: 0 },
-  { id: "rtx3060ti-g6x", label: "RTX 3060 Ti GDDR6X", base: 32, newPrice: 0 },
-  { id: "rtx3050-6", label: "RTX 3050 6GB", base: 14, newPrice: 0 },
+  { id: "rtx3080ti-12", label: "RTX 3080 Ti 12GB", base: 55, newPrice: 0 },
+  { id: "rtx3060ti-g6x", label: "RTX 3060 Ti GDDR6X", base: 30, newPrice: 0 },
+  { id: "rtx3050-6", label: "RTX 3050 6GB", base: 13, newPrice: 0 },
   // ── 엔비디아 20 / 16 시리즈 추가 ──
-  { id: "rtx2070-nonsuper", label: "RTX 2070 8GB", base: 19, newPrice: 0 },
+  { id: "rtx2070-nonsuper", label: "RTX 2070 8GB", base: 18, newPrice: 0 },
   { id: "gtx1630", label: "GTX 1630 4GB", base: 7, newPrice: 0 },
-  { id: "gtx1650-gddr6", label: "GTX 1650 GDDR6", base: 12, newPrice: 0 },
+  { id: "gtx1650-gddr6", label: "GTX 1650 GDDR6", base: 11, newPrice: 0 },
   // ── 엔비디아 구형 ──
-  { id: "gtx1050-2", label: "GTX 1050 2GB", base: 4.7, newPrice: 0 },
+  { id: "gtx1050-2", label: "GTX 1050 2GB", base: 4.5, newPrice: 0 },
   { id: "gtx960", label: "GTX 960", base: 4, newPrice: 0 },
   { id: "gtx950", label: "GTX 950", base: 3, newPrice: 0 },
-  { id: "gtx750ti", label: "GTX 750 Ti", base: 2.6, newPrice: 0 },
-  { id: "gt730", label: "GT 730", base: 1.6, newPrice: 0 },
-  { id: "gt710", label: "GT 710", base: 1.3, newPrice: 0 },
+  { id: "gtx750ti", label: "GTX 750 Ti", base: 2.5, newPrice: 0 },
+  { id: "gt730", label: "GT 730", base: 1.5, newPrice: 0 },
+  { id: "gt710", label: "GT 710", base: 1.2, newPrice: 0 },
   { id: "gt1030-ddr4", label: "GT 1030 DDR4", base: 4, newPrice: 0 },
   // ── AMD RX 9000 / 7000 추가 ──
-  { id: "rx9060xt-8", label: "RX 9060 XT 8GB", base: 40, newPrice: 45 },
-  { id: "rx7800xt", label: "RX 7800 XT", base: 55, newPrice: 0 },
-  { id: "rx7700xt", label: "RX 7700 XT", base: 42, newPrice: 0 },
-  { id: "rx7600xt", label: "RX 7600 XT 16GB", base: 34, newPrice: 0 },
-  { id: "rx7600", label: "RX 7600", base: 26, newPrice: 0 },
+  { id: "rx9060xt-8", label: "RX 9060 XT 8GB", base: 38, newPrice: 45 },
+  { id: "rx7800xt", label: "RX 7800 XT", base: 52, newPrice: 0 },
+  { id: "rx7700xt", label: "RX 7700 XT", base: 40, newPrice: 0 },
+  { id: "rx7600xt", label: "RX 7600 XT 16GB", base: 32, newPrice: 0 },
+  { id: "rx7600", label: "RX 7600", base: 25, newPrice: 0 },
   // ── AMD RX 6000 추가 ──
-  { id: "rx6950xt", label: "RX 6950 XT", base: 50, newPrice: 0 },
-  { id: "rx6750xt", label: "RX 6750 XT", base: 29, newPrice: 0 },
-  { id: "rx6700", label: "RX 6700 10GB", base: 23, newPrice: 0 },
-  { id: "rx6650xt", label: "RX 6650 XT", base: 19, newPrice: 0 },
-  { id: "rx6600xt", label: "RX 6600 XT", base: 17, newPrice: 0 },
+  { id: "rx6950xt", label: "RX 6950 XT", base: 48, newPrice: 0 },
+  { id: "rx6750xt", label: "RX 6750 XT", base: 28, newPrice: 0 },
+  { id: "rx6700", label: "RX 6700 10GB", base: 22, newPrice: 0 },
+  { id: "rx6650xt", label: "RX 6650 XT", base: 18, newPrice: 0 },
+  { id: "rx6600xt", label: "RX 6600 XT", base: 16, newPrice: 0 },
   { id: "rx6500xt", label: "RX 6500 XT", base: 9, newPrice: 0 },
   { id: "rx6400", label: "RX 6400", base: 7, newPrice: 0 },
   // ── AMD 구형 ──
-  { id: "rx5700xt", label: "RX 5700 XT", base: 14, newPrice: 0 },
-  { id: "rx5700", label: "RX 5700", base: 12, newPrice: 0 },
+  { id: "rx5700xt", label: "RX 5700 XT", base: 13, newPrice: 0 },
+  { id: "rx5700", label: "RX 5700", base: 11, newPrice: 0 },
   { id: "rx5600xt", label: "RX 5600 XT", base: 9, newPrice: 0 },
   { id: "rx5500xt", label: "RX 5500 XT 8GB", base: 7, newPrice: 0 },
   { id: "rxvega56", label: "RX Vega 56", base: 7, newPrice: 0 },
-  { id: "rx580-4", label: "RX 580 4GB", base: 4.7, newPrice: 0 },
-  { id: "rx480", label: "RX 480 8GB", base: 4.7, newPrice: 0 },
+  { id: "rx580-4", label: "RX 580 4GB", base: 4.5, newPrice: 0 },
+  { id: "rx480", label: "RX 480 8GB", base: 4.5, newPrice: 0 },
   { id: "rx470", label: "RX 470 4GB", base: 3, newPrice: 0 },
-  { id: "rx560", label: "RX 560 4GB", base: 2.6, newPrice: 0 },
-  { id: "rx550", label: "RX 550 4GB", base: 2.6, newPrice: 0 },
+  { id: "rx560", label: "RX 560 4GB", base: 2.5, newPrice: 0 },
+  { id: "rx550", label: "RX 550 4GB", base: 2.5, newPrice: 0 },
   // ── 인텔 Arc ──
-  { id: "arc-b570", label: "Arc B570 10GB", base: 23, newPrice: 28 },
-  { id: "arc-a770", label: "Arc A770 16GB", base: 25, newPrice: 0 },
-  { id: "arc-a750", label: "Arc A750 8GB", base: 19, newPrice: 0 },
+  { id: "arc-b570", label: "Arc B570 10GB", base: 22, newPrice: 28 },
+  { id: "arc-a770", label: "Arc A770 16GB", base: 24, newPrice: 0 },
+  { id: "arc-a750", label: "Arc A750 8GB", base: 18, newPrice: 0 },
   { id: "arc-a380", label: "Arc A380 6GB", base: 9, newPrice: 0 },
-  { id: "rtx5080", label: "RTX 5080", base: 228, newPrice: 190, n: 11 },
-  { id: "rtx5070ti", label: "RTX 5070 Ti", base: 132, newPrice: 130, n: 11 },
-  { id: "rtx5070", label: "RTX 5070", base: 86, newPrice: 95, n: 4 },
-  { id: "rtx5060ti-16", label: "RTX 5060 Ti 16GB", base: 78, newPrice: 75, n: 7 },
-  { id: "rtx5060ti-8", label: "RTX 5060 Ti 8GB", base: 68, newPrice: 58, n: 8 },
-  { id: "rtx5060", label: "RTX 5060", base: 55, newPrice: 50, n: 10 },
-  { id: "rtx5050", label: "RTX 5050 8GB", base: 24, newPrice: 32 },
+  { id: "rtx5080", label: "RTX 5080", base: 217, newPrice: 190, n: 11 },
+  { id: "rtx5070ti", label: "RTX 5070 Ti", base: 126, newPrice: 130, n: 11 },
+  { id: "rtx5070", label: "RTX 5070", base: 82, newPrice: 95, n: 4 },
+  { id: "rtx5060ti-16", label: "RTX 5060 Ti 16GB", base: 74, newPrice: 75, n: 7 },
+  { id: "rtx5060ti-8", label: "RTX 5060 Ti 8GB", base: 65, newPrice: 58, n: 8 },
+  { id: "rtx5060", label: "RTX 5060", base: 53, newPrice: 50, n: 6 },
+  { id: "rtx5050", label: "RTX 5050 8GB", base: 23, newPrice: 32 },
   // NVIDIA RTX 40 시리즈
-  { id: "rtx4090", label: "RTX 4090", base: 375, newPrice: 0, n: 4 },
-  { id: "rtx4080super", label: "RTX 4080 Super", base: 146, newPrice: 0, n: 10 },
-  { id: "rtx4080", label: "RTX 4080", base: 135, newPrice: 0, n: 4 },
-  { id: "rtx4070ti-super", label: "RTX 4070 Ti Super", base: 100, newPrice: 0, n: 7 },
-  { id: "rtx4070ti", label: "RTX 4070 Ti", base: 79, newPrice: 0, n: 9 },
-  { id: "rtx4070super", label: "RTX 4070 Super", base: 74, newPrice: 0, n: 11 },
-  { id: "rtx4070", label: "RTX 4070", base: 63, newPrice: 0, n: 5, soldPrice: 64, soldN: 3, verified: true },
-  { id: "rtx4060ti-16", label: "RTX 4060 Ti 16GB", base: 58, newPrice: 0, n: 6 },
-  { id: "rtx4060ti-8", label: "RTX 4060 Ti 8GB", base: 52, newPrice: 0, n: 10 },
-  { id: "rtx4060", label: "RTX 4060", base: 40, newPrice: 0, n: 15 },
+  { id: "rtx4090", label: "RTX 4090", base: 360, newPrice: 0, n: 19 },
+  { id: "rtx4080super", label: "RTX 4080 Super", base: 130, newPrice: 0, n: 8 },
+  { id: "rtx4080", label: "RTX 4080", base: 125, newPrice: 0, n: 6 },
+  { id: "rtx4070ti-super", label: "RTX 4070 Ti Super", base: 95, newPrice: 0, n: 7 },
+  { id: "rtx4070ti", label: "RTX 4070 Ti", base: 75, newPrice: 0, n: 9 },
+  { id: "rtx4070super", label: "RTX 4070 Super", base: 70, newPrice: 0, n: 11 },
+  { id: "rtx4070", label: "RTX 4070", base: 60, newPrice: 0, n: 5, verified: true },
+  { id: "rtx4060ti-16", label: "RTX 4060 Ti 16GB", base: 55, newPrice: 0, n: 6 },
+  { id: "rtx4060ti-8", label: "RTX 4060 Ti 8GB", base: 50, newPrice: 0, n: 10 },
+  { id: "rtx4060", label: "RTX 4060", base: 38, newPrice: 0, n: 15 },
   // NVIDIA RTX 30 시리즈
-  { id: "rtx3090ti", label: "RTX 3090 Ti", base: 158, newPrice: 0, n: 3 },
-  { id: "rtx3090", label: "RTX 3090", base: 139, newPrice: 0, n: 5 },
-  { id: "rtx3080ti", label: "RTX 3080 Ti", base: 64, newPrice: 0, n: 4 },
-  { id: "rtx3080-12", label: "RTX 3080 12GB", base: 49.5, newPrice: 0, n: 6 },
-  { id: "rtx3080-10", label: "RTX 3080 10GB", base: 44, newPrice: 0, n: 12 },
-  { id: "rtx3070ti", label: "RTX 3070 Ti", base: 38, newPrice: 0, n: 9 },
-  { id: "rtx3070", label: "RTX 3070", base: 35.6, newPrice: 0, n: 21 },
-  { id: "rtx3060ti", label: "RTX 3060 Ti", base: 31.9, newPrice: 0, n: 28 },
-  { id: "rtx3060-12", label: "RTX 3060 12GB", base: 32.0, newPrice: 0, n: 45 },
-  { id: "rtx3060-8", label: "RTX 3060 8GB", base: 32.1, newPrice: 0, n: 8 },
-  { id: "rtx3050-8", label: "RTX 3050 8GB", base: 22, newPrice: 0, n: 14 },
+  { id: "rtx3090ti", label: "RTX 3090 Ti", base: 150, newPrice: 0, n: 3 },
+  { id: "rtx3090", label: "RTX 3090", base: 132, newPrice: 0, n: 5 },
+  { id: "rtx3080ti", label: "RTX 3080 Ti", base: 61, newPrice: 0, n: 4 },
+  { id: "rtx3080-12", label: "RTX 3080 12GB", base: 47.1, newPrice: 0, n: 6 },
+  { id: "rtx3080-10", label: "RTX 3080 10GB", base: 42, newPrice: 0, n: 12 },
+  { id: "rtx3070ti", label: "RTX 3070 Ti", base: 36, newPrice: 0, n: 9 },
+  { id: "rtx3070", label: "RTX 3070", base: 33.9, newPrice: 0, n: 21 },
+  { id: "rtx3060ti", label: "RTX 3060 Ti", base: 30.4, newPrice: 0, n: 28 },
+  { id: "rtx3060-12", label: "RTX 3060 12GB", base: 30.5, newPrice: 0, n: 45 },
+  { id: "rtx3060-8", label: "RTX 3060 8GB", base: 30.6, newPrice: 0, n: 8 },
+  { id: "rtx3050-8", label: "RTX 3050 8GB", base: 21, newPrice: 0, n: 14 },
   // NVIDIA RTX 20 시리즈
-  { id: "rtx2080ti", label: "RTX 2080 Ti", base: 34.1, newPrice: 0, n: 6 },
-  { id: "rtx2080super", label: "RTX 2080 Super", base: 28, newPrice: 0, n: 4 },
-  { id: "rtx2080", label: "RTX 2080", base: 26.8, newPrice: 0, n: 5 },
-  { id: "rtx2070super", label: "RTX 2070 Super", base: 24.6, newPrice: 0, n: 8 },
-  { id: "rtx2070", label: "RTX 2070", base: 21, newPrice: 0, n: 7 },
-  { id: "rtx2060super", label: "RTX 2060 Super", base: 21.3, newPrice: 0, n: 11 },
-  { id: "rtx2060", label: "RTX 2060", base: 22, newPrice: 0, n: 9, verified: true },
+  { id: "rtx2080ti", label: "RTX 2080 Ti", base: 32.5, newPrice: 0, n: 6 },
+  { id: "rtx2080super", label: "RTX 2080 Super", base: 27, newPrice: 0, n: 4 },
+  { id: "rtx2080", label: "RTX 2080", base: 25.5, newPrice: 0, n: 5 },
+  { id: "rtx2070super", label: "RTX 2070 Super", base: 23.4, newPrice: 0, n: 8 },
+  { id: "rtx2070", label: "RTX 2070", base: 20, newPrice: 0, n: 7 },
+  { id: "rtx2060super", label: "RTX 2060 Super", base: 20.3, newPrice: 0, n: 11 },
+  { id: "rtx2060", label: "RTX 2060", base: 21, newPrice: 0, n: 9, verified: true },
   // NVIDIA GTX
-  { id: "gtx1080ti", label: "GTX 1080 Ti", base: 20, newPrice: 0, n: 14, verified: true },
-  { id: "gtx1080", label: "GTX 1080", base: 16, newPrice: 0, n: 13, verified: true },
-  { id: "gtx1070ti", label: "GTX 1070 Ti", base: 15, newPrice: 0, n: 8, verified: true },
-  { id: "gtx1070", label: "GTX 1070", base: 12.5, newPrice: 0, n: 19, verified: true },
-  { id: "gtx1660super", label: "GTX 1660 Super", base: 14.9, newPrice: 0, n: 24, verified: true },
-  { id: "gtx1660ti", label: "GTX 1660 Ti", base: 14.8, newPrice: 0, n: 14, verified: true },
-  { id: "gtx1660", label: "GTX 1660", base: 14.2, newPrice: 0, n: 13, verified: true },
-  { id: "gtx1650super", label: "GTX 1650 Super", base: 12.4, newPrice: 0, n: 6, verified: true },
+  { id: "gtx1080ti", label: "GTX 1080 Ti", base: 19, newPrice: 0, n: 14, verified: true },
+  { id: "gtx1080", label: "GTX 1080", base: 15, newPrice: 0, n: 13, verified: true },
+  { id: "gtx1070ti", label: "GTX 1070 Ti", base: 14, newPrice: 0, n: 8, verified: true },
+  { id: "gtx1070", label: "GTX 1070", base: 11.9, newPrice: 0, n: 19, verified: true },
+  { id: "gtx1660super", label: "GTX 1660 Super", base: 14.2, newPrice: 0, n: 24, verified: true },
+  { id: "gtx1660ti", label: "GTX 1660 Ti", base: 14.1, newPrice: 0, n: 14, verified: true },
+  { id: "gtx1660", label: "GTX 1660", base: 13.5, newPrice: 0, n: 13, verified: true },
+  { id: "gtx1650super", label: "GTX 1650 Super", base: 11.8, newPrice: 0, n: 6, verified: true },
   { id: "gtx1650", label: "GTX 1650", base: 10, newPrice: 0, n: 26, verified: true },
-  { id: "gtx1060-6", label: "GTX 1060 6GB", base: 10.0, newPrice: 0, n: 19, verified: true },
-  { id: "gtx1060-3", label: "GTX 1060 3GB", base: 8.9, newPrice: 0, n: 14, verified: true },
+  { id: "gtx1060-6", label: "GTX 1060 6GB", base: 9.5, newPrice: 0, n: 19, verified: true },
+  { id: "gtx1060-3", label: "GTX 1060 3GB", base: 8.5, newPrice: 0, n: 14, verified: true },
   { id: "gtx1050ti", label: "GTX 1050 Ti", base: 8, newPrice: 0, n: 27, verified: true },
   { id: "gtx1050", label: "GTX 1050", base: 6, newPrice: 0, n: 13, verified: true },
-  { id: "gtx980", label: "GTX 980", base: 8.9, newPrice: 0, n: 11, verified: true },
-  { id: "gtx970", label: "GTX 970", base: 6.9, newPrice: 0, n: 12, verified: true },
-  { id: "gt1030", label: "GT 1030", base: 7.7, newPrice: 0, n: 4, verified: true },
+  { id: "gtx980", label: "GTX 980", base: 8.5, newPrice: 0, n: 11, verified: true },
+  { id: "gtx970", label: "GTX 970", base: 6.6, newPrice: 0, n: 12, verified: true },
+  { id: "gt1030", label: "GT 1030", base: 7.3, newPrice: 0, n: 4, verified: true },
   // AMD Radeon
-  { id: "rx9070xt", label: "RX 9070 XT", base: 105, newPrice: 95, n: 8 },
-  { id: "rx9070", label: "RX 9070", base: 84, newPrice: 78, n: 6 },
-  { id: "rx9060xt-16", label: "RX 9060 XT 16GB", base: 61.4, newPrice: 56, n: 4 },
-  { id: "rx7900xtx", label: "RX 7900 XTX", base: 97, newPrice: 0, n: 7 },
-  { id: "rx7900xt", label: "RX 7900 XT", base: 90, newPrice: 0, n: 5 },
-  { id: "rx7900gre", label: "RX 7900 GRE", base: 61, newPrice: 0, n: 4 },
-  { id: "rx6900xt", label: "RX 6900 XT", base: 50, newPrice: 0, n: 3 },
-  { id: "rx6800xt", label: "RX 6800 XT", base: 45, newPrice: 0, n: 6 },
-  { id: "rx6800", label: "RX 6800", base: 34, newPrice: 0, n: 4 },
-  { id: "rx6700xt", label: "RX 6700 XT", base: 28, newPrice: 0, n: 9 },
-  { id: "rx6600", label: "RX 6600", base: 23.9, newPrice: 0, n: 12 },
-  { id: "rx580-8", label: "RX 580 8GB", base: 10.2, newPrice: 0, n: 16 },
-  { id: "rx570-8", label: "RX 570 8GB", base: 8.9, newPrice: 0, n: 11 },
+  { id: "rx9070xt", label: "RX 9070 XT", base: 100, newPrice: 95, n: 8 },
+  { id: "rx9070", label: "RX 9070", base: 80, newPrice: 78, n: 6 },
+  { id: "rx9060xt-16", label: "RX 9060 XT 16GB", base: 58.5, newPrice: 56, n: 4 },
+  { id: "rx7900xtx", label: "RX 7900 XTX", base: 92, newPrice: 0, n: 7 },
+  { id: "rx7900xt", label: "RX 7900 XT", base: 86, newPrice: 0, n: 5 },
+  { id: "rx7900gre", label: "RX 7900 GRE", base: 58, newPrice: 0, n: 4 },
+  { id: "rx6900xt", label: "RX 6900 XT", base: 48, newPrice: 0, n: 3 },
+  { id: "rx6800xt", label: "RX 6800 XT", base: 43, newPrice: 0, n: 6 },
+  { id: "rx6800", label: "RX 6800", base: 32, newPrice: 0, n: 4 },
+  { id: "rx6700xt", label: "RX 6700 XT", base: 27, newPrice: 0, n: 9 },
+  { id: "rx6600", label: "RX 6600", base: 22.8, newPrice: 0, n: 12 },
+  { id: "rx580-8", label: "RX 580 8GB", base: 9.7, newPrice: 0, n: 16 },
+  { id: "rx570-8", label: "RX 570 8GB", base: 8.5, newPrice: 0, n: 11 },
   { id: "rx570-4", label: "RX 570 4GB", base: 6, newPrice: 0, n: 7 },
   // Intel Arc
-  { id: "arc-b580", label: "Arc B580", base: 37, newPrice: 33, n: 5 },
+  { id: "arc-b580", label: "Arc B580", base: 35, newPrice: 33, n: 5 },
 ];
 
 // 출처: 본치마크 P2P 매물 중간값 (표본 3~35건). 2026년 메모리 급등이 그대로 반영된 수치.
 const RAM_OPTIONS = [
-  { id: "ddr3-8", label: "DDR3 8GB", base: 1.9, newPrice: 0, n: 6 },
+  { id: "ddr3-8", label: "DDR3 8GB", base: 1.8, newPrice: 0, n: 6 },
   { id: "ddr4-8", label: "DDR4 8GB", base: 5, newPrice: 7, n: 28 },
   { id: "ddr4-16", label: "DDR4 16GB", base: 11.3, newPrice: 15, n: 35 },
-  { id: "ddr4-32", label: "DDR4 32GB", base: 26.8, newPrice: 32, n: 19 },
-  { id: "ddr4-64", label: "DDR4 64GB", base: 63, newPrice: 72, n: 4 },
-  { id: "ddr5-8", label: "DDR5 8GB", base: 16, newPrice: 18, n: 7 },
-  { id: "ddr5-16", label: "DDR5 16GB", base: 28.8, newPrice: 33, n: 24 },
-  { id: "ddr5-32", label: "DDR5 32GB", base: 52, newPrice: 68, n: 9 },
-  { id: "ddr5-48", label: "DDR5 48GB", base: 77.2, newPrice: 85, n: 3 },
-  { id: "ddr5-64", label: "DDR5 64GB", base: 126, newPrice: 135, n: 5 },
+  { id: "ddr4-32", label: "DDR4 32GB", base: 25.5, newPrice: 32, n: 19 },
+  { id: "ddr4-64", label: "DDR4 64GB", base: 60, newPrice: 72, n: 4 },
+  { id: "ddr5-8", label: "DDR5 8GB", base: 15, newPrice: 18, n: 7 },
+  { id: "ddr5-16", label: "DDR5 16GB", base: 27.4, newPrice: 33, n: 24 },
+  { id: "ddr5-32", label: "DDR5 32GB", base: 59.1, newPrice: 68, n: 22 },
+  { id: "ddr5-48", label: "DDR5 48GB", base: 73.5, newPrice: 85, n: 3 },
+  { id: "ddr5-64", label: "DDR5 64GB", base: 120, newPrice: 135, n: 5 },
 ];
 
 // 출처: 본치마크 P2P 매물 중간값 (표본 5~166건).
@@ -280,16 +275,16 @@ const STORAGE_OPTIONS = [
   { id: "sata-128", label: "SATA SSD 128GB", base: 2, newPrice: 0, n: 22 },
   { id: "sata-256", label: "SATA SSD 256GB", base: 4, newPrice: 5, n: 48 },
   { id: "sata-500", label: "SATA SSD 500GB", base: 9, newPrice: 11, n: 61 },
-  { id: "sata-1000", label: "SATA SSD 1TB", base: 17, newPrice: 19, n: 39 },
-  { id: "sata-2000", label: "SATA SSD 2TB", base: 29, newPrice: 33, n: 12 },
-  { id: "nvme-256", label: "NVMe SSD 256GB", base: 6.1, newPrice: 7, n: 35 },
-  { id: "nvme-512", label: "NVMe SSD 512GB", base: 10.1, newPrice: 12, n: 88 },
-  { id: "nvme-1000", label: "NVMe SSD 1TB", base: 25, newPrice: 24, n: 5 },
-  { id: "nvme-2000", label: "NVMe SSD 2TB", base: 40, newPrice: 44, n: 44 },
-  { id: "nvme-4000", label: "NVMe SSD 4TB", base: 81, newPrice: 88, n: 7 },
-  { id: "hdd-1000", label: "HDD 1TB", base: 2.8, newPrice: 5, n: 29 },
+  { id: "sata-1000", label: "SATA SSD 1TB", base: 16, newPrice: 19, n: 39 },
+  { id: "sata-2000", label: "SATA SSD 2TB", base: 28, newPrice: 33, n: 12 },
+  { id: "nvme-256", label: "NVMe SSD 256GB", base: 5.8, newPrice: 7, n: 35 },
+  { id: "nvme-512", label: "NVMe SSD 512GB", base: 9.6, newPrice: 12, n: 88 },
+  { id: "nvme-1000", label: "NVMe SSD 1TB", base: 20, newPrice: 24, n: 166 },
+  { id: "nvme-2000", label: "NVMe SSD 2TB", base: 38, newPrice: 44, n: 44 },
+  { id: "nvme-4000", label: "NVMe SSD 4TB", base: 77, newPrice: 88, n: 7 },
+  { id: "hdd-1000", label: "HDD 1TB", base: 2.7, newPrice: 5, n: 29 },
   { id: "hdd-2000", label: "HDD 2TB", base: 5, newPrice: 8, n: 24 },
-  { id: "hdd-4000", label: "HDD 4TB", base: 13.4, newPrice: 16, n: 9 },
+  { id: "hdd-4000", label: "HDD 4TB", base: 12.8, newPrice: 16, n: 9 },
 ];
 
 // 출처: 본치마크 P2P 매물 중간값 (표본 4~47건).
@@ -470,7 +465,6 @@ export default function PCPriceEstimator() {
   const [reportDone, setReportDone] = useState(false);
   const [reportError, setReportError] = useState(null);
   const [reportOpen, setReportOpen] = useState(false);
-  const [priceBasis, setPriceBasis] = useState("listed"); // listed | sold
   const [partQuery, setPartQuery] = useState("");
   const [searchMode, setSearchMode] = useState("local"); // local | ai
   const [aiQuery, setAiQuery] = useState("");
@@ -810,18 +804,15 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
   }
 
   // 제보가 반영된 유효 시세: 조사 표본과 사용자 제보를 표본 수로 가중평균
-  // priceBasis가 "sold"이고 판매완료 데이터가 있으면 그 값을 우선 사용
   function effectivePrice(part) {
-    if (!part) return { value: 0, n: 0, reportN: 0, basis: "없음", verified: false };
+    if (!part) return { value: 0, n: 0, reportN: 0, verified: false };
 
-    const useSold = priceBasis === "sold" && part.soldPrice;
-    const baseValue = useSold ? part.soldPrice : part.base;
-    const baseN = (useSold ? part.soldN : part.n) || 0;
-    const basis = useSold ? "판매완료" : "판매중";
+    const baseValue = part.base;
+    const baseN = part.n || 0;
 
     const verified = !!part.verified;
     const reports = userReports[part.id] || [];
-    if (reports.length === 0) return { value: baseValue, n: baseN, reportN: 0, basis, verified };
+    if (reports.length === 0) return { value: baseValue, n: baseN, reportN: 0, verified };
 
     // 평균 대신 중간값을 써서 이상값 하나가 시세를 흔들지 못하게 함
     const sorted = [...reports].sort((a, b) => a - b);
@@ -836,7 +827,7 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
     const value =
       totalWeight > 0 ? (baseValue * baseN + reportMedian * reportWeight) / totalWeight : reportMedian;
 
-    return { value, n: baseN + reports.length, reportN: reports.length, basis, verified };
+    return { value, n: baseN + reports.length, reportN: reports.length, verified };
   }
 
   // 표본 수 기준 신뢰도
@@ -970,8 +961,6 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
           sampleN: eff.n,
           reportN: eff.reportN,
           partId: part.id,
-          basis: eff.basis,
-          hasSold: !!part.soldPrice,
           verified: eff.verified,
         };
       })
@@ -993,14 +982,13 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
     const depreciationPct = newPriceTotal > 0 ? Math.round((1 - mid / newPriceTotal) * 100) : null;
 
     const totalReports = perComponent.reduce((s, c) => s + c.reportN, 0);
-    const soldCoverage = perComponent.filter((c) => c.hasSold).length;
 
     return {
       low, mid, high, curve, condTone: condObj.tone, perComponent,
-      newPriceTotal, depreciationPct, avgN, totalReports, soldCoverage,
+      newPriceTotal, depreciationPct, avgN, totalReports,
       confidence: confidenceOf(avgN),
     };
-  }, [cpuText, gpuText, ram, storage, mobo, psu, pcCase, includeCase, age, condition, userReports, priceBasis]);
+  }, [cpuText, gpuText, ram, storage, mobo, psu, pcCase, includeCase, age, condition, userReports]);
 
   const maxCurve = Math.max(...result.curve, 1);
 
@@ -1192,27 +1180,6 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
             <span style={styles.rangeText}>{formatWon(result.low)} ~ {formatWon(result.high)}</span>
           </div>
 
-          <div style={styles.basisRow}>
-            {[
-              { id: "listed", label: "판매중 호가" },
-              { id: "sold", label: "판매완료가" },
-            ].map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => setPriceBasis(b.id)}
-                style={{
-                  ...styles.basisBtn,
-                  background: priceBasis === b.id ? "#2A3140" : "transparent",
-                  color: priceBasis === b.id ? "#fff" : "#9AA6B8",
-                  borderColor: priceBasis === b.id ? "#3E7A57" : "#2A3140",
-                }}
-              >
-                {b.label}
-              </button>
-            ))}
-          </div>
-
           <div style={styles.confidenceRow}>
             <span style={{ ...styles.confidenceBadge, color: result.confidence.tone, borderColor: result.confidence.tone }}>
               신뢰도 {result.confidence.label}
@@ -1222,14 +1189,6 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
               {result.totalReports > 0 && ` · 내 제보 ${result.totalReports}건`}
             </span>
           </div>
-
-          {priceBasis === "sold" && (
-            <div style={styles.basisNote}>
-              {result.soldCoverage > 0
-                ? `${result.soldCoverage}개 부품만 판매완료 데이터가 있어요. 나머지는 판매중 호가로 계산됩니다.`
-                : "선택한 부품에는 아직 판매완료 데이터가 없어요. 전부 판매중 호가 기준입니다."}
-            </div>
-          )}
 
           <label style={styles.toggleRow}>
             <input
@@ -1352,7 +1311,7 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
                   <div style={styles.sampleLine}>
                     {c.sampleN > 0 ? (
                       <>
-                        <span style={{ color: conf.tone }}>●</span> {c.basis} 표본 {c.sampleN}건
+                        <span style={{ color: conf.tone }}>●</span> 표본 {c.sampleN}건
                         {c.reportN > 0 && ` (제보 ${c.reportN}건 포함)`}
                       </>
                     ) : (
@@ -1448,7 +1407,6 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
                         <div style={styles.searchRowRight}>
                           <span style={styles.searchPrice}>{formatWon(p.base)}</span>
                           <span style={styles.searchMeta}>
-                            {p.soldPrice ? `판매완료 ${formatWon(p.soldPrice)} · ` : ""}
                             표본 {p.n || 0}건
                           </span>
                         </div>
@@ -1762,7 +1720,6 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
                         <span style={styles.searchTag}> 시세표</span>
                       )}
                     </div>
-                    {c.basis && <div style={styles.compBasis}>{c.basis}</div>}
                   </div>
                   <div style={styles.compValue}>{formatWon(c.value)}</div>
                 </div>
@@ -1976,25 +1933,6 @@ const styles = {
     gap: 8,
     marginTop: 10,
     flexWrap: "wrap",
-  },
-  basisRow: { display: "flex", gap: 6, marginTop: 12 },
-  basisBtn: {
-    flex: 1,
-    padding: "7px 10px",
-    borderRadius: 6,
-    border: "1px solid",
-    fontSize: 11.5,
-    fontFamily: "'JetBrains Mono', monospace",
-    cursor: "pointer",
-  },
-  basisNote: {
-    marginTop: 8,
-    fontSize: 11,
-    color: "#9AA6B8",
-    lineHeight: 1.5,
-    background: "#1B2230",
-    borderRadius: 6,
-    padding: "8px 10px",
   },
   confidenceBadge: {
     fontSize: 11,
