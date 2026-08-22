@@ -17,7 +17,7 @@ const FEATURES = {
 // ---- Baseline reference data ----
 // 출처: 본치마크(computer.downingmoon.dev) — 당근/번개장터/중고나라 등 공개 매물의 최근 90일 표본 중간값.
 // 2026-08-19~20 기준 수집. base = 실제 P2P 매물 중간값(만원).
-const DATA_SOURCE_NOTE = "중고나라 판매중 호가 + 당근마켓 거래완료가 혼합 (부품별로 출처 다름)";
+const DATA_SOURCE_NOTE = "예상가는 중고나라 판매중 호가와 당근마켓 거래완료가를 부품별로 섞어 쓴 추정치예요(구형 GPU 일부는 실제 거래완료가, 나머지는 판매중 호가)";
 
 const CPUS = [
   // 인텔 (표본 3~16건 기준)
@@ -207,36 +207,36 @@ const GPUS = [
   { id: "rtx4060", label: "RTX 4060", base: 38, n: 1 },
   // NVIDIA RTX 30 시리즈
   { id: "rtx3090ti", label: "RTX 3090 Ti", base: 158, n: 3 },
-  { id: "rtx3090", label: "RTX 3090", base: 139, n: 5 },
-  { id: "rtx3080ti", label: "RTX 3080 Ti", base: 64, n: 4 },
+  { id: "rtx3090", label: "RTX 3090", base: 93, n: 4 },
+  { id: "rtx3080ti", label: "RTX 3080 Ti", base: 65, n: 4 },
   { id: "rtx3080-12", label: "RTX 3080 12GB", base: 49.5, n: 6 },
-  { id: "rtx3080-10", label: "RTX 3080 10GB", base: 44, n: 12 },
-  { id: "rtx3070ti", label: "RTX 3070 Ti", base: 38, n: 9 },
-  { id: "rtx3070", label: "RTX 3070", base: 30, n: 1 },
-  { id: "rtx3060ti", label: "RTX 3060 Ti", base: 31.9, n: 28 },
-  { id: "rtx3060-12", label: "RTX 3060 12GB", base: 22, n: 1 },
+  { id: "rtx3080-10", label: "RTX 3080 10GB", base: 44, n: 6 },
+  { id: "rtx3070ti", label: "RTX 3070 Ti", base: 37, n: 9 },
+  { id: "rtx3070", label: "RTX 3070", base: 32, n: 7, soldPrice: 30, soldN: 1 },
+  { id: "rtx3060ti", label: "RTX 3060 Ti", base: 30.5, n: 6 },
+  { id: "rtx3060-12", label: "RTX 3060 12GB", base: 32, n: 3, soldPrice: 22, soldN: 1 },
   { id: "rtx3060-8", label: "RTX 3060 8GB", base: 32.1, n: 8 },
-  { id: "rtx3050-8", label: "RTX 3050 8GB", base: 22, n: 14 },
+  { id: "rtx3050-8", label: "RTX 3050 8GB", base: 20, n: 4 },
   // NVIDIA RTX 20 시리즈
-  { id: "rtx2080ti", label: "RTX 2080 Ti", base: 34.1, n: 6 },
-  { id: "rtx2080super", label: "RTX 2080 Super", base: 28, n: 4 },
+  { id: "rtx2080ti", label: "RTX 2080 Ti", base: 32, n: 5 },
+  { id: "rtx2080super", label: "RTX 2080 Super", base: 27.5, n: 3 },
   { id: "rtx2080", label: "RTX 2080", base: 26.8, n: 5 },
-  { id: "rtx2070super", label: "RTX 2070 Super", base: 24.6, n: 8 },
+  { id: "rtx2070super", label: "RTX 2070 Super", base: 24.3, n: 9 },
   { id: "rtx2070", label: "RTX 2070", base: 21, n: 7 },
-  { id: "rtx2060super", label: "RTX 2060 Super", base: 21.3, n: 11 },
-  { id: "rtx2060", label: "RTX 2060", base: 15, n: 2, verified: true },
+  { id: "rtx2060super", label: "RTX 2060 Super", base: 21.25, n: 4 },
+  { id: "rtx2060", label: "RTX 2060", base: 15, n: 2, soldPrice: 15, soldN: 2, verified: true },
   // NVIDIA GTX
-  { id: "gtx1080ti", label: "GTX 1080 Ti", base: 20, n: 14, verified: true },
-  { id: "gtx1080", label: "GTX 1080", base: 12, n: 1, verified: true },
-  { id: "gtx1070ti", label: "GTX 1070 Ti", base: 15, n: 8, verified: true },
+  { id: "gtx1080ti", label: "GTX 1080 Ti", base: 25, n: 5, verified: true },
+  { id: "gtx1080", label: "GTX 1080", base: 12, n: 1, soldPrice: 12, soldN: 1, verified: true },
+  { id: "gtx1070ti", label: "GTX 1070 Ti", base: 12.5, n: 5, verified: true },
   { id: "gtx1070", label: "GTX 1070", base: 9, n: 1, verified: true },
-  { id: "gtx1660super", label: "GTX 1660 Super", base: 14.9, n: 24, verified: true },
+  { id: "gtx1660super", label: "GTX 1660 Super", base: 17, n: 7, verified: true },
   { id: "gtx1660ti", label: "GTX 1660 Ti", base: 14.8, n: 14, verified: true },
   { id: "gtx1660", label: "GTX 1660", base: 14.2, n: 13, verified: true },
   { id: "gtx1650super", label: "GTX 1650 Super", base: 12.4, n: 6, verified: true },
   { id: "gtx1650", label: "GTX 1650", base: 10, n: 26, verified: true },
-  { id: "gtx1060-6", label: "GTX 1060 6GB", base: 7.75, n: 2, verified: true },
-  { id: "gtx1060-3", label: "GTX 1060 3GB", base: 4.5, n: 3, verified: true },
+  { id: "gtx1060-6", label: "GTX 1060 6GB", base: 7.75, n: 2, soldPrice: 7.75, soldN: 3, verified: true },
+  { id: "gtx1060-3", label: "GTX 1060 3GB", base: 10.2, n: 3, soldPrice: 4.5, soldN: 3, verified: true },
   { id: "gtx1050ti", label: "GTX 1050 Ti", base: 8, n: 27, verified: true },
   { id: "gtx1050", label: "GTX 1050", base: 6, n: 13, verified: true },
   { id: "gtx980", label: "GTX 980", base: 8.9, n: 11, verified: true },
@@ -286,20 +286,23 @@ const RAM_OPTIONS = [
 // 출처: 본치마크 P2P 매물 중간값 (표본 5~166건).
 const STORAGE_OPTIONS = [
   { id: "sata-128", label: "SATA SSD 128GB", base: 2, n: 22 },
-  { id: "sata-256", label: "SATA SSD 256GB", base: 4, n: 48 },
-  { id: "sata-500", label: "SATA SSD 500GB", base: 9, n: 61 },
-  { id: "sata-1000", label: "SATA SSD 1TB", base: 14.5, n: 39 },
+  { id: "sata-256", label: "SATA SSD 256GB", base: 3.5, n: 7 },
+  { id: "sata-500", label: "SATA SSD 500GB", base: 6.9, n: 4 },
+  { id: "sata-1000", label: "SATA SSD 1TB", base: 15, n: 5 },
   { id: "sata-2000", label: "SATA SSD 2TB", base: 29, n: 12 },
-  { id: "nvme-256", label: "NVMe SSD 256GB", base: 6.1, n: 35 },
-  { id: "nvme-512-gen3-dram", label: "NVMe SSD 512GB (Gen3, DRAM 탑재)", base: 10, n: 3 },
+  { id: "nvme-256", label: "NVMe SSD 256GB", base: 2.75, n: 2 },
+  { id: "nvme-512-gen3-dram", label: "NVMe SSD 512GB (Gen3, DRAM 탑재)", base: 11.5, n: 4 },
   { id: "nvme-512-gen3-dramless", label: "NVMe SSD 512GB (Gen3, DRAM리스)", base: 13, n: 3 },
+  { id: "nvme-512-gen4-dram", label: "NVMe SSD 512GB (Gen4, DRAM 탑재)", base: 12.9, n: 7 },
+  { id: "nvme-512-gen4-dramless", label: "NVMe SSD 512GB (Gen4, DRAM리스)", base: 12.5, n: 1 },
   { id: "nvme-1000-gen3-dram", label: "NVMe SSD 1TB (Gen3, DRAM 탑재)", base: 20, n: 5 },
   { id: "nvme-1000-gen3-dramless", label: "NVMe SSD 1TB (Gen3, DRAM리스)", base: 17, n: 2 },
-  { id: "nvme-1000-gen4-dram", label: "NVMe SSD 1TB (Gen4, DRAM 탑재)", base: 25, n: 5 },
-  { id: "nvme-1000-gen4-dramless", label: "NVMe SSD 1TB (Gen4, DRAM리스)", base: 18, n: 2 },
-  { id: "nvme-2000-gen3", label: "NVMe SSD 2TB (PCIe Gen3)", base: 31.5, n: 4 },
-  { id: "nvme-2000-gen4", label: "NVMe SSD 2TB (PCIe Gen4)", base: 44, n: 3 },
-  { id: "nvme-4000", label: "NVMe SSD 4TB", base: 81, n: 7 },
+  { id: "nvme-1000-gen4-dram", label: "NVMe SSD 1TB (Gen4, DRAM 탑재)", base: 21, n: 10 },
+  { id: "nvme-1000-gen4-dramless", label: "NVMe SSD 1TB (Gen4, DRAM리스)", base: 18, n: 3 },
+  { id: "nvme-2000-gen3-dram", label: "NVMe SSD 2TB (Gen3, DRAM 탑재)", base: 31.5, n: 4 },
+  { id: "nvme-2000-gen4-dram", label: "NVMe SSD 2TB (Gen4, DRAM 탑재)", base: 41, n: 8 },
+  { id: "nvme-2000-gen4-dramless", label: "NVMe SSD 2TB (Gen4, DRAM리스)", base: 25, n: 3 },
+  { id: "nvme-4000-gen4-dram", label: "NVMe SSD 4TB (Gen4, DRAM 탑재)", base: 92.5, n: 8 },
   { id: "hdd-1000", label: "HDD 1TB", base: 2.8, n: 29 },
   { id: "hdd-2000", label: "HDD 2TB", base: 5, n: 24 },
   { id: "hdd-4000", label: "HDD 4TB", base: 13.4, n: 9 },
@@ -959,6 +962,8 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
           partId: part.id,
           basis: eff.basis,
           verified: eff.verified,
+          soldPrice: part.soldPrice,
+          soldN: part.soldN,
         };
       })
       .filter((c) => c.value > 0);
@@ -1020,7 +1025,7 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
         <h1 style={styles.h1}>중고 컴퓨터, 지금 얼마가 적정가일까</h1>
         <p style={styles.sub}>사양과 상태를 입력하면 예상 거래 범위를 계산합니다.</p>
         <div style={styles.globalNotice}>
-          ℹ️ 예상가는 중고나라 판매중 호가와 당근마켓 거래완료가를 부품별로 섞어 쓴 추정치예요(구형 GPU 일부는 실제 거래완료가, 나머지는 판매중 호가). 참고용으로만 활용해 주세요.
+          ℹ️ {DATA_SOURCE_NOTE}. 참고용으로만 활용해 주세요.
           <br />
           🔄 시세 데이터 최종 업데이트: {DATA_UPDATED_AT} (매주 자동 갱신)
         </div>
@@ -1188,14 +1193,14 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
                 <div style={styles.refineBox}>
                   <div style={styles.aiBadge}>AI 실시간 보정 · 참고용</div>
                   <div style={styles.refineRow}>
-                    <span style={styles.newPriceLabel}>보정된 예상가</span>
-                    <span style={styles.newPriceValue}>{formatWon(refineResult.refinedEstimate)}</span>
+                    <span style={styles.refineLabel}>보정된 예상가</span>
+                    <span style={styles.refineValue}>{formatWon(refineResult.refinedEstimate)}</span>
                   </div>
                   <div style={styles.refineRow}>
-                    <span style={styles.newPriceLabel}>기준값 대비</span>
+                    <span style={styles.refineLabel}>기준값 대비</span>
                     <span
                       style={{
-                        ...styles.newPriceValue,
+                        ...styles.refineValue,
                         color: refineResult.diffFromSite > 0 ? "#5EEAD4" : refineResult.diffFromSite < 0 ? "#F0A7A0" : "#fff",
                       }}
                     >
@@ -1204,8 +1209,8 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
                     </span>
                   </div>
                   <div style={styles.refineRow}>
-                    <span style={styles.newPriceLabel}>신뢰도</span>
-                    <span style={styles.newPriceValue}>{refineResult.confidence}</span>
+                    <span style={styles.refineLabel}>신뢰도</span>
+                    <span style={styles.refineValue}>{refineResult.confidence}</span>
                   </div>
                   <div style={styles.refineNote}>{refineResult.note}</div>
                 </div>
@@ -1241,10 +1246,21 @@ ${Object.entries(priceTable).map(([k, v]) => `[${k}] ${v}`).join("\n")}
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={styles.compValue}>{formatWon(c.value)}</div>
+                  {c.soldPrice && (
+                    <div style={styles.compSold}>
+                      실거래 {formatWon(c.soldPrice)} ({c.soldN}건)
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
+          {result.perComponent.some((c) => c.soldPrice) && (
+            <div style={styles.soldNote}>
+              💡 <b>실거래</b>는 당근마켓에서 실제로 거래완료된 가격이에요. 판매중 호가보다 낮은 경우가 많으니
+              협상할 때 참고하세요. (거래 시점은 확인되지 않아 오래된 사례일 수 있어요)
+            </div>
+          )}
         </section>
 
         <section style={styles.searchCard} className="card full-span">
@@ -1850,25 +1866,6 @@ const styles = {
     marginTop: 10,
     flexWrap: "wrap",
   },
-  basisRow: { display: "flex", gap: 6, marginTop: 12 },
-  basisBtn: {
-    flex: 1,
-    padding: "7px 10px",
-    borderRadius: 6,
-    border: "1px solid",
-    fontSize: 11.5,
-    fontFamily: "'JetBrains Mono', monospace",
-    cursor: "pointer",
-  },
-  basisNote: {
-    marginTop: 8,
-    fontSize: 11,
-    color: "#9AA6B8",
-    lineHeight: 1.5,
-    background: "#1B2230",
-    borderRadius: 6,
-    padding: "8px 10px",
-  },
   confidenceBadge: {
     fontSize: 11,
     fontFamily: "'JetBrains Mono', monospace",
@@ -2125,20 +2122,19 @@ const styles = {
     textTransform: "uppercase",
   },
   compName: { fontSize: 13, marginTop: 2, color: "#131A24" },
-  compValue: { fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 600 },
-  toggleRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
+  compSold: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: "#8A6D1F", marginTop: 3 },
+  soldNote: {
     marginTop: 14,
-    fontSize: 12,
-    color: "#C7CEDA",
-    cursor: "pointer",
-    fontFamily: "'JetBrains Mono', monospace",
+    paddingTop: 12,
+    borderTop: "1px dashed #D8DEE8",
+    fontSize: 11.5,
+    color: "#5A6474",
+    lineHeight: 1.6,
   },
+  compValue: { fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 600 },
   toggleCheckbox: { width: 14, height: 14, cursor: "pointer" },
-  newPriceLabel: { fontSize: 12, color: "#9AA6B8", fontFamily: "'JetBrains Mono', monospace" },
-  newPriceValue: { fontSize: 13, color: "#fff", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" },
+  refineLabel: { fontSize: 12, color: "#9AA6B8", fontFamily: "'JetBrains Mono', monospace" },
+  refineValue: { fontSize: 13, color: "#fff", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" },
   shotCard: {
     background: "#fff",
     border: "1px solid #D7DCE4",
@@ -2209,7 +2205,6 @@ const styles = {
     WebkitAppearance: "none",
     appearance: "none",
   },
-  shotAnalyzing: { fontSize: 13, color: "#5A6474", fontFamily: "'JetBrains Mono', monospace" },
   aiBadge: {
     display: "inline-block",
     fontSize: 9.5,
